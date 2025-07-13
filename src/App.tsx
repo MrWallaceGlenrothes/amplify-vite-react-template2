@@ -20,7 +20,7 @@ function AppContent() {
   const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
   const [description, setDescription] = useState("");
 
-  const [{ data, isLoading }, generateContent] = useAIGeneration("generateRecipe");
+  const [{ data, isLoading }, generateRecipe] = useAIGeneration("generateRecipe");
 
   useEffect(() => {
     const sub = client.models.Todo.observeQuery().subscribe({
@@ -41,8 +41,8 @@ function AppContent() {
     client.models.Todo.delete({ id });
   }
 
-  const handleGenerate = () => {
-    generateContent({ description });
+  const handleClick = () => {
+    generateRecipe({ description });
   };
 
   return (
@@ -64,20 +64,22 @@ function AppContent() {
           onChange={(e) => setDescription(e.target.value)}
           label="Descripción para generar receta"
         />
-        <Button onClick={handleGenerate}>Generar receta</Button>
+        <Button onClick={handleClick}>Generar receta</Button>
 
         {isLoading ? (
           <Loader variation="linear" />
         ) : (
-          data?.name && (
+          data && (
             <>
               <Text fontWeight="bold">{data.name}</Text>
               <View as="ul">
-                {data.ingredients?.map((ingredient) => (
-                  <View as="li" key={ingredient}>
-                    {ingredient}
-                  </View>
-                ))}
+                {data.ingredients
+                  ?.filter((ingredient): ingredient is string => ingredient !== null && ingredient !== undefined)
+                  .map((ingredient) => (
+                    <View as="li" key={ingredient}>
+                      {ingredient}
+                    </View>
+                  ))}
               </View>
               <Text>{data.instructions}</Text>
             </>
@@ -89,7 +91,6 @@ function AppContent() {
     </Flex>
   );
 }
-
 export default function App() {
   return (
     <Authenticator>
