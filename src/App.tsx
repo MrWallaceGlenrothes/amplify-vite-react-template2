@@ -1,49 +1,99 @@
 import { useEffect, useState } from "react";
-import { useAuthenticator } from '@aws-amplify/ui-react';
+import {
+  Authenticator,
+  useAuthenticator,
+  Flex,
+  TextAreaField,
+  Loader,
+  Text,
+  View,
+  Button,
+} from "@aws-amplify/ui-react";
 import type { Schema } from "../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
-
+import { useAIGeneration } from "./client";
 
 const client = generateClient<Schema>();
 
-function App() {  
-  const {user, signOut } = useAuthenticator();
+function AppContent() {
+  const { user, signOut } = useAuthenticator();
   const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
+  const [description, setDescription] = useState("");
+
+  const [{ data, isLoading }, generateRecipe] = useAIGeneration("generateRecipe");
 
   useEffect(() => {
-    client.models.Todo.observeQuery().subscribe({
+    const sub = client.models.Todo.observeQuery().subscribe({
       next: (data) => setTodos([...data.items]),
     });
+
+    return () => sub.unsubscribe();
   }, []);
 
   function createTodo() {
-    client.models.Todo.create({ content: window.prompt("Todo content") });
+    const content = window.prompt("Todo content");
+    if (content) {
+      client.models.Todo.create({ content });
+    }
   }
-  
+
   function deleteTodo(id: string) {
-    client.models.Todo.delete({ id })
+    client.models.Todo.delete({ id });
   }
+
+  const handleGenerate = () => {
+    generateRecipe({ description });
+  };
+
   return (
-    <main>
+    <Flex direction="column" padding="2rem" gap="2rem">
       <h1>{user?.signInDetails?.loginId}'s todos</h1>
-      <button onClick={createTodo}>afegeix un to do</button>
+      <Button onClick={createTodo}>Agregar un todo</Button>
       <ul>
         {todos.map((todo) => (
-          <li 
-           onClick={() => deleteTodo(todo.id)}
-            key={todo.id}>{todo.content}</li>
+          <li onClick={() => deleteTodo(todo.id)} key={todo.id}>
+            {todo.content}
+          </li>
         ))}
       </ul>
-      <div>
-        🥳 App successfully hosted. Try creating a new todo.
-        <br />
-        <a href="https://docs.amplify.aws/react/start/quickstart/#make-frontend-updates">
-          Review next step of this tutorial.
-        </a>
-      </div>
-               <button onClick={signOut}>Sign out</button>   
-    </main>
+
+      <Flex direction="column" gap="1rem">
+        <TextAreaField
+          autoResize
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          label="Descripción para generar receta"
+        />
+        <Button onClick={handleGenerate}>Generar receta</Button>
+
+        {isLoading ? (
+          <Loader variation="linear" />
+        ) : (
+          data?.name && (
+            <>
+              <Text fontWeight="bold">{data.name}</Text>
+              <View as="ul">
+                {data.ingredients?.map((ingredient) => (
+                  <View as="li" key={ingredient}>
+                    {ingredient}
+                  </View>
+                ))}
+              </View>
+              <Text>{data.instructions}</Text>
+            </>
+          )
+        )}
+      </Flex>
+
+      <Button onClick={signOut}>Sign out</Button>
+    </Flex>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <Authenticator>
+      <AppContent />
+    </Authenticator>
+  );
+}
