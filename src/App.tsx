@@ -20,7 +20,7 @@ function AppContent() {
   const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
   const [description, setDescription] = useState("");
 
-  const [{ data, isLoading }, generateRecipe] = useAIGeneration("generateRecipe");
+  const [{ data, isLoading }, generateContent] = useAIGeneration("generateRecipe");
 
   useEffect(() => {
     const sub = client.models.Todo.observeQuery().subscribe({
@@ -42,7 +42,7 @@ function AppContent() {
   }
 
   const handleGenerate = () => {
-    generateRecipe({ description });
+    generateContent({ description });
   };
 
   return (
