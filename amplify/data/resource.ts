@@ -14,6 +14,7 @@ const schema = a.schema({
     .authorization((allow) => [allow.publicApiKey()]),
 
   contentGen: a.generation({aiModel: a.ai.model("Claude 3 Haiku"),systemPrompt:"You are a helpful assistant that generates content for Todo items."})
+  .returns(a.string())
 });
 
 export type Schema = ClientSchema<typeof schema>;
