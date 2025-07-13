@@ -11,7 +11,12 @@ const schema = a.schema({
     .model({
       content: a.string(),
     })
-    .authorization((allow) => [allow.publicApiKey()]),
+    .authorization((allow) => [allow.owner()]),
+
+  contentGen: a.generation({
+    aiModel: "claude-3-haiku",
+    systemPrompt: "You are an assistant that helps generate product descriptions in Spanish.",
+  }),
 });
 
 export type Schema = ClientSchema<typeof schema>;
@@ -19,8 +24,7 @@ export type Schema = ClientSchema<typeof schema>;
 export const data = defineData({
   schema,
   authorizationModes: {
-    defaultAuthorizationMode: "apiKey",
-    // API Key is used for a.allow.public() rules
+    defaultAuthorizationMode: "userPool",
     apiKeyAuthorizationMode: {
       expiresInDays: 30,
     },
